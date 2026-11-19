@@ -18,6 +18,8 @@ function App() {
 
   // Loading and Error States
   const [loading, setLoading] = useState(true);
+  const [addLoading, setAddLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(null);
   const [error, setError] = useState("");
 
   // Get Tasks from Backend
@@ -42,6 +44,8 @@ function App() {
     if (task.trim() === "") return;
 
     try {
+      setAddLoading(true);
+
       const response = await API.post("/tasks", {
         title: task.trim(),
       });
@@ -52,6 +56,8 @@ function App() {
     } catch (error) {
       console.error("Error adding task:", error);
       setError("Unable to add task.");
+    } finally {
+      setAddLoading(false);
     }
   };
 
@@ -75,7 +81,15 @@ function App() {
 
   // Delete Task Function
   const handleDeleteTask = async (id) => {
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this task?"
+    );
+
+    if (!confirmed) return;
+
     try {
+      setDeleteLoading(id);
+
       await API.delete(`/tasks/${id}`);
 
       setTasks(tasks.filter((item) => item._id !== id));
@@ -89,6 +103,8 @@ function App() {
     } catch (error) {
       console.error("Error deleting task:", error);
       setError("Unable to delete task.");
+    } finally {
+      setDeleteLoading(null);
     }
   };
 
@@ -217,9 +233,10 @@ function App() {
 
             <button
               type="submit"
-              className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700"
+              disabled={addLoading}
+              className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              Add Task
+              {addLoading ? "Adding..." : "Add Task"}
             </button>
 
           </div>
@@ -259,10 +276,14 @@ function App() {
 
           </div>
 
+          {/* Loading Spinner */}
           {loading ? (
 
-            <div className="text-center py-8">
-              <p className="text-gray-500">Loading tasks...</p>
+            <div className="flex justify-center items-center py-10">
+              <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+              <p className="ml-3 text-gray-500">
+                Loading tasks...
+              </p>
             </div>
 
           ) : filteredTasks.length === 0 ? (
@@ -381,9 +402,12 @@ function App() {
                       <button
                         type="button"
                         onClick={() => handleDeleteTask(item._id)}
-                        className="text-red-500 hover:text-red-700"
+                        disabled={deleteLoading === item._id}
+                        className="text-red-500 hover:text-red-700 disabled:opacity-60 disabled:cursor-not-allowed"
                       >
-                        Delete
+                        {deleteLoading === item._id
+                          ? "Deleting..."
+                          : "Delete"}
                       </button>
 
                     </div>
@@ -406,11 +430,6 @@ function App() {
 }
 
 export default App;
-
-
-
-
-
 
 
 
